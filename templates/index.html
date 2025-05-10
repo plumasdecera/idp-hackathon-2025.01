@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>IDP Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            background: '#0a0f1a', // azul escuro bem
+            primary: '#3b82f6',  // azul clarinho
+            light: '#f5faff', // branco
+          },
+          animation: {
+            fadeIn: 'fadeIn 0.4s ease-in-out',
+            'gradient-x': 'gradient-x 5s ease-in-out infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: 0 },
+              '100%': { opacity: 1 },
+            },
+            'gradient-x': {
+              '0%': { backgroundPosition: '0% 50%' },
+              '50%': { backgroundPosition: '100% 50%' },
+              '100%': { backgroundPosition: '0% 50%' },
+            },
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-background text-light min-h-screen flex items-center justify-center px-4">
+
+  <div class="w-full max-w-3xl flex flex-col items-center justify-center text-center space-y-8 animate-fadeIn">
+
+    <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight text-transparent bg-gradient-to-r from-blue-400 via-white to-blue-500 
+    bg-clip-text animate-gradient-x bg-[length:250%_250%] transition duration-300 drop-shadow-[0_0_12px_rgba(59,130,246,0.3)] select-none">
+    <span class="text-blue-400">IDP</span> <span class="text-white">Assistant</span>
+    </h1>
+
+
+
+    <div class="w-full max-w-2xl transition duration-300 hover:shadow-[0_0_25px_rgba(59,130,246,0.3)] rounded-2xl">
+      <div class="backdrop-blur-md bg-white/5 border border-white/20 rounded-2xl px-6 py-4 flex items-center">
+        <input
+          id="inputPergunta"
+          type="text"
+          placeholder="Digite sua pergunta..."
+          class="w-full bg-transparent text-white placeholder:text-white/50 text-lg focus:outline-none"
+        />
+        <button onclick="enviarPergunta()"
+          class="ml-4 p-3 bg-blue-600 hover:bg-blue-700 transition duration-300 text-white rounded-xl hover:scale-105"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+               stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18.75 7.5 7.5 0 0016.65 16.65z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap justify-center gap-3 w-full max-w-2xl">
+      <span onclick="preencherPergunta('📘 Como funciona o TCC?')"
+        class="px-4 py-2 text-sm bg-white/10 text-white border border-white/20 rounded-full hover:bg-white/20 hover:scale-105 transition duration-300 cursor-pointer"
+      >📘 Como funciona o TCC?</span>
+      <span onclick="preencherPergunta('🧮 Preciso cursar Cálculo 2?')"
+        class="px-4 py-2 text-sm bg-white/10 text-white border border-white/20 rounded-full hover:bg-white/20 hover:scale-105 transition duration-300 cursor-pointer"
+      >🧮 Preciso cursar Cálculo 2?</span>
+      <span onclick="preencherPergunta('🗓️ Qual o prazo de matrícula?')"
+        class="px-4 py-2 text-sm bg-white/10 text-white border border-white/20 rounded-full hover:bg-white/20 hover:scale-105 transition duration-300 cursor-pointer"
+      >🗓️ Qual o prazo de matrícula?</span>
+    </div>
+
+    <div id="respostas" class="space-y-6 max-w-3xl mx-auto"></div>
+
+    <div id="erroToast" class="hidden fixed bottom-4 right-4 bg-red-600 text-white px-4 py-2 rounded-md shadow-lg animate-fadeIn">
+      Erro: Nenhum contexto encontrado.
+    </div>
+  </div>
+
+  <script>
+    function preencherPergunta(texto) {
+      document.getElementById('inputPergunta').value = texto;
+    }
+
+async function enviarPergunta() {
+  const input = document.getElementById('inputPergunta');
+  const container = document.getElementById('respostas');
+  const pergunta = input.value.trim();
+  if (!pergunta) return;
+
+  const loading = document.createElement('div');
+  loading.textContent = "Pensando...";
+  loading.className = "text-gray-400 animate-pulse";
+  container.appendChild(loading);
+
+  try {
+    const response = await fetch('/perguntar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pergunta })
+    });
+
+    const data = await response.json();
+    loading.remove();
+
+if (response.ok && data.resposta) {
+  const respostaData = data.resposta;
+
+  const resposta = document.createElement('div');
+  resposta.classList.add('resposta-box');
+  resposta.classList.add('animate-fadeIn', 'transition', 'duration-300', 'transform', 'hover:scale-101');
+
+  resposta.innerHTML = `
+    <div class="relative bg-gradient-to-br from-blue-900/50 to-black/40 backdrop-blur-lg p-6 rounded-2xl text-white space-y-4 shadow-lg border border-white/10">
+
+      <button onclick="this.closest('.resposta-box').remove()"
+        class="absolute top-2 right-2 text-white/60 hover:text-white bg-white/10 hover:bg-red-600 rounded-full w-7 h-7 flex items-center justify-center transition duration-300"
+        title="Fechar resposta">
+        ×
+      </button>
+
+      <!-- Título e corpo da resposta -->
+      <h2 class="text-xl font-semibold text-blue-300">${respostaData.title}</h2>
+      <p class="text-white/90 prose prose-invert prose-p:leading-relaxed max-w-none">${respostaData.body}</p>
+
+      <div class="absolute bottom-3 left-4">
+        <span class="inline-block bg-blue-600 hover:bg-blue-700 text-xs px-3 py-1 rounded-full relative group cursor-pointer">
+          Fonte
+          <span class="absolute bottom-full left-0 mb-2 bg-gray-900 text-white text-xs rounded px-2 py-1 border border-white/10 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 max-w-xs break-words">
+            ${respostaData.source}
+          </span>
+        </span>
+      </div>
+
+    </div>
+  `;
+
+  container.appendChild(resposta);
+  resposta.scrollIntoView({ behavior: 'smooth' });
+}
+
+
+ else {
+      mostrarErroToast(data.erro || "Erro desconhecido ao buscar resposta.");
+    }
+
+  } catch (err) {
+    console.error("Erro na requisição:", err);
+    loading.remove();
+    mostrarErroToast("Erro na comunicação com o servidor.");
+  }
+}
+
+  function mostrarErroToast(mensagem) {
+    const toast = document.getElementById('erroToast');
+    toast.textContent = mensagem;
+    toast.classList.remove('hidden');
+    setTimeout(() => {
+      toast.classList.add('hidden');
+      toast.textContent = "Erro: Nenhum contexto encontrado.";
+    }, 4000);
+  }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.querySelector('.animate-fadeIn');
+      container.classList.remove('hidden');
+      container.classList.add('animate-fadeIn');
+    });
+    
+  </script>
+
+</body>
+</html>
